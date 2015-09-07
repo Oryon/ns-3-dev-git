@@ -324,6 +324,9 @@ def configure(conf):
     env['APPNAME'] = wutils.APPNAME
     env['VERSION'] = wutils.VERSION
 
+    env['ENABLE_ubox']=conf.check(mandatory=True, libpath=[os.path.abspath('../libubox/')],includes=[os.path.abspath('../libubox/')],lib='ubox',uselib_store='LIBUBOX')
+    env['ENABLE_libdncp']=conf.check(mandatory=True, libpath=[os.path.abspath('../hnetd/')],includes=[os.path.abspath('../hnetd/src/')],lib='dncp',uselib_store='LIBDNCP')
+
     if conf.env['CXX_NAME'] in ['gcc', 'icc']:
         if Options.options.build_profile == 'release': 
             env.append_value('CXXFLAGS', '-fomit-frame-pointer') 
