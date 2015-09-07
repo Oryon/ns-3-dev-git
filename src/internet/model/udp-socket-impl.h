@@ -88,6 +88,7 @@ public:
   virtual uint32_t GetTxAvailable (void) const;
   virtual int Send (Ptr<Packet> p, uint32_t flags);
   virtual int SendTo (Ptr<Packet> p, uint32_t flags, const Address &address);
+  virtual int SendTo (Ptr<Packet> p, uint32_t flags, const Address &address, Ptr<NetDevice> device);
   virtual uint32_t GetRxAvailable (void) const;
   virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flags);
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
@@ -192,6 +193,8 @@ private:
    * \returns 0 on success, -1 on failure
    */
   int DoSendTo (Ptr<Packet> p, Ipv6Address daddr, uint16_t dport);
+
+  int DoSendTo (Ptr<Packet> p, Ipv6Address daddr, uint16_t dport, Ptr<NetDevice> device);
 
   /**
    * \brief Called by the L3 protocol when it received an ICMP packet to pass on to TCP.

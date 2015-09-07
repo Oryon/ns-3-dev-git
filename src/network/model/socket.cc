@@ -171,6 +171,30 @@ Socket::SendTo (const uint8_t* buf, uint32_t size, uint32_t flags,
   return SendTo (p, flags, toAddress);
 }
 
+int
+Socket::SendTo (const uint8_t* buf, uint32_t size, uint32_t flags,
+                const Address &toAddress,Ptr<NetDevice> device)
+{
+  NS_LOG_FUNCTION (this << &buf << size << flags << &toAddress);
+  Ptr<Packet> p;
+  if(buf)
+    {
+      p = Create<Packet> (buf, size);
+    }
+  else
+    {
+      p = Create<Packet> (size);
+    }
+  return SendTo (p, flags, toAddress,device);
+}
+
+int
+Socket::SendTo (Ptr<Packet> p, uint32_t flags,
+                const Address &toAddress,Ptr<NetDevice>)
+{
+  return -1;
+}
+
 Ptr<Packet>
 Socket::Recv (void)
 {

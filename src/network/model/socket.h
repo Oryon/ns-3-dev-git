@@ -355,6 +355,14 @@ public:
   virtual int SendTo (Ptr<Packet> p, uint32_t flags, 
                       const Address &toAddress) = 0;
 
+  /*
+   * Part of a fix to be able to send packets on a specified interface.
+   */
+  int SendTo (const uint8_t* buf, uint32_t size, uint32_t flags,
+              const Address &address,Ptr<NetDevice> device);
+  virtual int SendTo (Ptr<Packet> p, uint32_t flags,
+                      const Address &toAddress,Ptr<NetDevice>);
+
   /**
    * Return number of bytes which can be returned from one or 
    * multiple calls to Recv.

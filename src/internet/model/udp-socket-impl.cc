@@ -662,15 +662,21 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
 }
 
 int
-UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
+UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port,
+                         Ptr<NetDevice> netdevice)
 {
   NS_LOG_FUNCTION (this << p << dest << port);
 
   if (dest.IsIpv4MappedAddress ())
     {
+		//When IPv4 support, add device argument
         return (DoSendTo(p, dest.GetIpv4MappedAddress (), port));
     }
-  if (m_boundnetdevice)
+  if(netdevice)
+    {
+      NS_LOG_LOGIC ("Specific output interface " << netdevice->GetIfIndex ());
+    }
+  else if (m_boundnetdevice)
     {
       NS_LOG_LOGIC ("Bound interface number " << m_boundnetdevice->GetIfIndex ());
     }
@@ -745,7 +751,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
       header.SetNextHeader (UdpL4Protocol::PROT_NUMBER);
       Socket::SocketErrno errno_;
       Ptr<Ipv6Route> route;
-      Ptr<NetDevice> oif = m_boundnetdevice; //specify non-zero if bound to a specific device
+      Ptr<NetDevice> oif = netdevice?netdevice:m_boundnetdevice; //specify output device
       // TBD-- we could cache the route and just check its validity
       route = ipv6->GetRoutingProtocol ()->RouteOutput (p, header, oif, errno_); 
       if (route != 0)
@@ -775,6 +781,11 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
   return 0;
 }
 
+int
+UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
+{
+  return DoSendTo(p, dest, port, NULL);
+}
 
 // maximum message size for UDP broadcast is limited by MTU
 // size of underlying link; we are not checking that now.
@@ -789,7 +800,8 @@ UdpSocketImpl::GetTxAvailable (void) const
 }
 
 int 
-UdpSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address &address)
+UdpSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address &address, 
+                       Ptr<NetDevice> netdevice)
 {
   NS_LOG_FUNCTION (this << p << flags << address);
   if (InetSocketAddress::IsMatchingType (address))
@@ -804,6 +816,7 @@ UdpSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address &address)
       InetSocketAddress transport = InetSocketAddress::ConvertFrom (address);
       Ipv4Address ipv4 = transport.GetIpv4 ();
       uint16_t port = transport.GetPort ();
+	  // No per-device for IPv4 for now
       return DoSendTo (p, ipv4, port);
     }
   else if (Inet6SocketAddress::IsMatchingType (address))
@@ -818,9 +831,15 @@ UdpSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address &address)
       Inet6SocketAddress transport = Inet6SocketAddress::ConvertFrom (address);
       Ipv6Address ipv6 = transport.GetIpv6 ();
       uint16_t port = transport.GetPort ();
-      return DoSendTo (p, ipv6, port);
+      return DoSendTo (p, ipv6, port, netdevice);
     }
   return -1;
+}
+
+int 
+UdpSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address &address)
+{
+	return UdpSocketImpl::SendTo (p, flags, address, NULL);
 }
 
 uint32_t
@@ -1022,6 +1041,7 @@ UdpSocketImpl::ForwardUp6 (Ptr<Packet> packet, Ipv6Header header, uint16_t port,
     {
       Ipv6PacketInfoTag tag;
       packet->RemovePacketTag (tag);
+	  tag.SetAddress(header.GetDestinationAddress());
       tag.SetRecvIf (incomingInterface->GetDevice ()->GetIfIndex ());
       packet->AddPacketTag (tag);
     }
